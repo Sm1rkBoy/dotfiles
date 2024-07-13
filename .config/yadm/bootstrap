@@ -1,0 +1,95 @@
+#!/bin/bash
+echo "查看shell列表"
+cat /etc/shells
+echo ""
+
+echo "查看当前使用的Shell"
+echo $SHELL
+echo ""
+
+echo "更新apt源"
+apt update
+echo ""
+
+echo "安装git zsh figlet中..."
+apt install zsh git figlet tree -y
+echo ""
+
+echo "设置sshd_config..."
+cat > /etc/ssh/sshd_config << EOF
+Include /etc/ssh/sshd_config.d/*.conf
+
+Port 22
+#AddressFamily any
+ListenAddress 0.0.0.0
+ListenAddress ::
+SyslogFacility AUTH
+LogLevel INFO
+LoginGraceTime 30s
+PermitRootLogin prohibit-password
+PasswordAuthentication no
+PermitEmptyPasswords no
+StrictModes yes
+MaxAuthTries 6
+MaxSessions 10
+PubkeyAuthentication yes
+AuthorizedKeysFile .ssh/authorized_keys
+KbdInteractiveAuthentication no
+UsePAM yes
+X11Forwarding yes
+PrintMotd no
+PrintLastLog yes
+#TCPKeepAlive yes
+#PermitUserEnvironment no
+#Compression delayed
+#ClientAliveInterval 0
+#ClientAliveCountMax 3
+#UseDNS no
+#PidFile /run/sshd.pid
+#MaxStartups 10:30:100
+#PermitTunnel no
+#ChrootDirectory none
+#VersionAddendum none
+#Banner none
+# AcceptEnv LANG LC_*
+Subsystem sftp /usr/lib/openssh/sftp-server
+#Match User anoncvs
+#       X11Forwarding no
+#       AllowTcpForwarding no
+#       PermitTTY no
+#       ForceCommand cvs server
+EOF
+
+echo "添加公钥"
+echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDG+yjzFVEshJ+kUy7QDpsKAUAqGLZ2/4gllq9CVcosNjD2uRWklh8Kyit85kIZzbA4k663HIJ4ZPsvZLSiMc6aG36t1TRrKM33o8VZNHNeeS3C/jmM/MQEznc5d2k6yip7EF/5E06Un8euSj4m6eckdzV6ZUj+qW6lKSSi0LURoWEuSVExr4sqIRLVrgzAFUYY9Pg+/4rmFlQb6ntTRCKTzVhccdlD+dFTajxkv6dIsGegG4WHNoIKIhG4GPbZkYBBJt0e+YFsSQlNNEcjMMnwOntI/i326E9SFnE/0PYh9e9AgxsedYgLnLsvcG9QuNPdahs8F1MT379fxBcir0XjwDvtSuld83xS+t56GFemYSS8NrYzGnxMRmsEsoXE9fW3The3Ny3aKrL/4B7+vNb+anU4ctZ9RGxv6DwJdnstzw2iFsI220b8VoH5xDEarmwQuHLBzqUXT7FVIvrkUQbXADo+ZsfSFfN6/2MiVbSlK7GLQaq8jiPUY9cBkDLXeubqOLbMToH+2QKXBnIi43d57R6UgNpctX5wx1jihDXKvVQPiqXAoW47IwCNp9UeuwwvXlaUsPpPhLEaCt2bQ6wG6jgwMCdC2YGSrsbjPra3VSaO3dnhf58iTs1yEtejS7GKrpttvqmwcWNmEqlqD67KvEM1g7FX9YHPEdn4N3KzoQ==' > ~/.ssh/authorized_keys
+echo ""
+
+echo "重启sshd中..."
+systemctl restart sshd
+echo ""
+
+echo "修改motd"
+echo '' > /etc/motd
+figlet Sm1rkBoy >> /etc/motd
+echo ""
+
+echo "修改系统信息"
+echo '#!/bin/sh' > /etc/update-motd.d/10-uname
+echo ""
+
+echo '设置默认shell为zsh'
+chsh -s /usr/bin/zsh
+echo ""
+
+echo '写入环境变量信息'
+echo 'export ZDOTDIR=$HOME/.config/zsh'     >> /etc/zsh/zshenv
+echo 'export XDG_CONFIG_HOME=$HOME/.config' >> /etc/zsh/zshenv
+echo 'export XDG_CACHE_HOME=$HOME/.cache'   >> /etc/zsh/zshenv
+echo 'export XDG_DATA_HOME=$HOME/.data'     >> /etc/zsh/zshenv
+echo 'export XDG_STATE_HOME=$HOME/.state'   >> /etc/zsh/zshenv
+echo ""
+
+git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.config/zsh/zsh-syntax-highlighting
+git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git ~/.config/zsh/zsh-autosuggestions
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.config/zsh/zsh-powerlevel10k
+rm -rf .bash_history .bashrc .local .profile
